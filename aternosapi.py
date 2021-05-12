@@ -26,7 +26,7 @@ class AternosAPI():
     def GetStatus(self):
         webserver = requests.get(url='https://aternos.org/server/', headers=self.headers)
         if not webserver.ok:
-            return f'Failed to Connect: {webserver.status_code}'
+            return f'Failed to Connect: {webserver.status_code}: {webserver.reason}'
         webdata = BeautifulSoup(webserver.content, 'html.parser')
         status = webdata.find('span', class_='statuslabel-label').get_text()
         status = status.strip()
@@ -34,30 +34,30 @@ class AternosAPI():
 
     def StartServer(self):
         serverstatus = self.GetStatus()
-        if serverstatus == "Failed to Connect":
+        if "Failed to Connect" in serverstatus:
             return serverstatus
-        elif serverstatus == "Online":
-            return "Server Already Running"
+        elif serverstatus != "Offline":
+            return f'Could not start, server is {serverstatus}'
         else:
             parameters = {}
             parameters['headstart'] = 0
             parameters['SEC'] = self.SEC
             parameters['TOKEN'] = self.TOKEN
             startserver = requests.get(url=f"https://aternos.org/panel/ajax/start.php", params=parameters, headers=self.headers)
-            return "Server Started"
+            return "Server Starting"
 
     def StopServer(self):
         serverstatus = self.GetStatus()
-        if serverstatus == "Failed to Connect":
+        if "Failed to Connect" in serverstatus:
             return serverstatus
-        elif serverstatus == "Offline":
-            return "Server Already Offline"
+        elif serverstatus != "Online":
+            return f'Could not shut down, server is {serverstatus}'
         else:
             parameters = {}
             parameters['SEC'] = self.SEC
             parameters['TOKEN'] = self.TOKEN
             stopserver = requests.get(url=f"https://aternos.org/panel/ajax/stop.php", params=parameters, headers=self.headers)
-            return "Server Stopped"
+            return "Server Stopping"
 
     def GetServerInfo(self):
         ServerInfo = requests.get(url='https://aternos.org/server/', headers=self.headers)
